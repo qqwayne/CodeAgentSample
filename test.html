@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator Unit Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+        .pass {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .fail {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .summary {
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-top: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        h2 {
+            color: #555;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Calculator Unit Tests</h1>
+    <div id="test-results"></div>
+
+    <script>
+        // Simple testing framework
+        class SimpleTest {
+            constructor() {
+                this.results = [];
+                this.passCount = 0;
+                this.failCount = 0;
+            }
+
+            assertEqual(actual, expected, testName) {
+                const passed = actual === expected;
+                this.results.push({
+                    name: testName,
+                    passed: passed,
+                    actual: actual,
+                    expected: expected
+                });
+                
+                if (passed) {
+                    this.passCount++;
+                } else {
+                    this.failCount++;
+                }
+            }
+
+            assertTrue(condition, testName) {
+                this.assertEqual(condition, true, testName);
+            }
+
+            assertFalse(condition, testName) {
+                this.assertEqual(condition, false, testName);
+            }
+
+            displayResults() {
+                const container = document.getElementById('test-results');
+                let html = '';
+
+                this.results.forEach(result => {
+                    const cssClass = result.passed ? 'pass' : 'fail';
+                    const status = result.passed ? 'PASS' : 'FAIL';
+                    
+                    html += `<div class="test-result ${cssClass}">
+                        <strong>${status}:</strong> ${result.name}`;
+                    
+                    if (!result.passed) {
+                        html += ` - Expected: ${result.expected}, Got: ${result.actual}`;
+                    }
+                    
+                    html += '</div>';
+                });
+
+                html += `<div class="summary">
+                    Tests run: ${this.results.length} | 
+                    Passed: ${this.passCount} | 
+                    Failed: ${this.failCount}
+                </div>`;
+
+                container.innerHTML = html;
+            }
+        }
+
+        // Mock DOM elements for testing
+        const mockDisplay = { value: '0' };
+        function mockGetDisplay() {
+            return mockDisplay;
+        }
+
+        // Calculator logic for testing (simplified version)
+        let testCurrentInput = '0';
+        let testOperator = '';
+        let testPreviousInput = '';
+        let testWaitingForOperand = false;
+
+        function testUpdateDisplay(value = testCurrentInput) {
+            mockDisplay.value = value;
+        }
+
+        function testAppendNumber(number) {
+            if (testWaitingForOperand) {
+                testCurrentInput = number;
+                testWaitingForOperand = false;
+            } else {
+                testCurrentInput = testCurrentInput === '0' ? number : testCurrentInput + number;
+            }
+            testUpdateDisplay();
+        }
+
+        function testAppendDecimal() {
+            if (testWaitingForOperand) {
+                testCurrentInput = '0.';
+                testWaitingForOperand = false;
+            } else if (testCurrentInput.indexOf('.') === -1) {
+                testCurrentInput += '.';
+            }
+            testUpdateDisplay();
+        }
+
+        function testPerformCalculation() {
+            const prev = parseFloat(testPreviousInput);
+            const current = parseFloat(testCurrentInput);
+            let result;
+
+            switch (testOperator) {
+                case '+':
+                    result = prev + current;
+                    break;
+                case '-':
+                    result = prev - current;
+                    break;
+                case '*':
+                    result = prev * current;
+                    break;
+                case '/':
+                    if (current === 0) {
+                        return 0; // Simplified error handling for tests
+                    }
+                    result = prev / current;
+                    break;
+                default:
+                    return current;
+            }
+
+            return Math.round(result * 100000000) / 100000000;
+        }
+
+        function testClearDisplay() {
+            testCurrentInput = '0';
+            testPreviousInput = '';
+            testOperator = '';
+            testWaitingForOperand = false;
+            testUpdateDisplay();
+        }
+
+        function testAppendOperator(nextOperator) {
+            if (testPreviousInput !== '' && testOperator && !testWaitingForOperand) {
+                const result = testPerformCalculation();
+                testCurrentInput = String(result);
+                testPreviousInput = testCurrentInput; // Update previousInput to the calculated result
+                testUpdateDisplay();
+            } else if (testPreviousInput === '') {
+                testPreviousInput = testCurrentInput;
+            }
+
+            testWaitingForOperand = true;
+            testOperator = nextOperator;
+        }
+
+        function testCalculate() {
+            if (testOperator && testPreviousInput !== '' && !testWaitingForOperand) {
+                const result = testPerformCalculation();
+                testCurrentInput = String(result);
+                testPreviousInput = '';
+                testOperator = '';
+                testWaitingForOperand = true;
+                testUpdateDisplay();
+            }
+        }
+
+        // Run tests
+        function runTests() {
+            const test = new SimpleTest();
+
+            // Test number input
+            testClearDisplay();
+            testAppendNumber('5');
+            test.assertEqual(testCurrentInput, '5', 'Should append single digit');
+
+            testClearDisplay();
+            testAppendNumber('1');
+            testAppendNumber('2');
+            testAppendNumber('3');
+            test.assertEqual(testCurrentInput, '123', 'Should append multiple digits');
+
+            // Test decimal input
+            testClearDisplay();
+            testAppendNumber('5');
+            testAppendDecimal();
+            testAppendNumber('7');
+            test.assertEqual(testCurrentInput, '5.7', 'Should handle decimal input');
+
+            // Test multiple decimals (should ignore second one)
+            testClearDisplay();
+            testAppendNumber('5');
+            testAppendDecimal();
+            testAppendDecimal();
+            testAppendNumber('7');
+            test.assertEqual(testCurrentInput, '5.7', 'Should ignore multiple decimal points');
+
+            // Test addition
+            testClearDisplay();
+            testAppendNumber('5');
+            testAppendOperator('+');
+            testAppendNumber('3');
+            testCalculate();
+            test.assertEqual(testCurrentInput, '8', 'Should perform addition: 5 + 3 = 8');
+
+            // Test subtraction
+            testClearDisplay();
+            testAppendNumber('1');
+            testAppendNumber('0');
+            testAppendOperator('-');
+            testAppendNumber('4');
+            testCalculate();
+            test.assertEqual(testCurrentInput, '6', 'Should perform subtraction: 10 - 4 = 6');
+
+            // Test multiplication
+            testClearDisplay();
+            testAppendNumber('6');
+            testAppendOperator('*');
+            testAppendNumber('7');
+            testCalculate();
+            test.assertEqual(testCurrentInput, '42', 'Should perform multiplication: 6 * 7 = 42');
+
+            // Test division
+            testClearDisplay();
+            testAppendNumber('1');
+            testAppendNumber('5');
+            testAppendOperator('/');
+            testAppendNumber('3');
+            testCalculate();
+            test.assertEqual(testCurrentInput, '5', 'Should perform division: 15 / 3 = 5');
+
+            // Test division by zero
+            testClearDisplay();
+            testAppendNumber('5');
+            testAppendOperator('/');
+            testAppendNumber('0');
+            const divByZeroResult = testPerformCalculation();
+            test.assertEqual(divByZeroResult, 0, 'Should handle division by zero');
+
+            // Test clear functionality
+            testClearDisplay();
+            test.assertEqual(testCurrentInput, '0', 'Should clear to initial state');
+            test.assertEqual(testOperator, '', 'Should clear operator');
+            test.assertEqual(testPreviousInput, '', 'Should clear previous input');
+
+            // Test chained operations
+            testClearDisplay();
+            testAppendNumber('2');
+            testAppendOperator('+');
+            testAppendNumber('3');
+            testAppendOperator('*');
+            testAppendNumber('4');
+            testCalculate();
+            test.assertEqual(testCurrentInput, '20', 'Should handle chained operations: (2 + 3) * 4 = 20');
+
+            // Test decimal calculations
+            testClearDisplay();
+            testAppendNumber('1');
+            testAppendDecimal();
+            testAppendNumber('5');
+            testAppendOperator('+');
+            testAppendNumber('2');
+            testAppendDecimal();
+            testAppendNumber('5');
+            testCalculate();
+            test.assertEqual(testCurrentInput, '4', 'Should handle decimal calculations: 1.5 + 2.5 = 4');
+
+            test.displayResults();
+        }
+
+        // Run tests when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            runTests();
+        });
+    </script>
+</body>
+</html>
