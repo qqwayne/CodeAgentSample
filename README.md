@@ -1,5 +1,23 @@
 # CodeAgentSample
 
+## 振り分けポリシー (Routing Policy)
+
+| Priority | Severity | 定義 |
+|----------|----------|------|
+| **P0** | Critical | システム全体がダウン/データ損失。即時対応。 |
+| **P1** | High     | 主要機能が使用不可。ワークアラウンドなし。 |
+| **P2** | Medium   | 一部機能が制限。ワークアラウンドあり。 |
+| **P3** | Low      | 軽微な不具合・改善要望・質問。 |
+
+**60秒で行う振り分けチェックリスト**
+1. 全体障害またはデータ損失 → P0、主要機能停止 → P1
+2. ワークアラウンドなし → P1、あり → P2以下
+3. 影響ユーザーが多数 → P1、少数 → P2/P3
+4. 常に再現 → P1/P2、まれに再現 → P3
+5. Priority を設定して担当チームにアサイン ✓
+
+---
+
 ## Online Calculator
 
 A simple and intuitive online calculator built with HTML, CSS, and JavaScript. This application provides a clean, responsive interface for performing basic arithmetic operations.
@@ -61,21 +79,3 @@ This calculator works in all modern browsers including:
 - **HTML5**: Semantic markup with accessibility considerations
 - **CSS3**: Modern styling with flexbox/grid layout and animations
 - **Vanilla JavaScript**: No external dependencies, pure JavaScript implementation
-
----
-
-## 振り分けポリシー (Routing Policy)
-
-| Priority | Severity | 定義 |
-|----------|----------|------|
-| **P0** | Critical | システム全体がダウン/データ損失。即時対応。 |
-| **P1** | High     | 主要機能が使用不可。ワークアラウンドなし。 |
-| **P2** | Medium   | 一部機能が制限。ワークアラウンドあり。 |
-| **P3** | Low      | 軽微な不具合・改善要望・質問。 |
-
-**60秒で行う振り分けチェックリスト**
-1. 全体障害またはデータ損失 → P0、主要機能停止 → P1
-2. ワークアラウンドなし → P1、あり → P2以下
-3. 影響ユーザーが多数 → P1、少数 → P2/P3
-4. 常に再現 → P1/P2、まれに再現 → P3
-5. Priority を設定して担当チームにアサイン ✓
